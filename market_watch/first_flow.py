@@ -1,27 +1,65 @@
+from asyncio import tasks
+from dataclasses import field
+import os
+from dotenv import load_dotenv
+import requests
+import pandas as pd
+from prefect import flow, task
 
-import random
-from prefect import flow    # NEW **** 
+@task
+def make_authentication_header():
+    load_dotenv()
 
-def call_unreliable_api():
-    choices = [{"data": 42}, "failure"]
-    res = random.choice(choices)
-    if res == "failure":
-        raise Exception("Our unreliable service failed")
-    else:
-        return res
+    TWITTER_API_KEY=os.getenv('TWITTER_API_KEY')
+    TWITTER_API_KEY_SECRET=os.getenv('TWITTER_API_SECRET')
+    TWITTER_BEARER_TOKEN=os.getenv('TWITTER_BEARER_TOKEN')
 
-def augment_data(data: dict, msg: str):
-    data["message"] = msg
-    return data
+    headers = {"Authorization": f"Bearer {TWITTER_BEARER_TOKEN}"}
 
-def write_results_to_database(data: dict):
-    print(f"Wrote {data} to database successfully!")
-    return "Success!"
+    return headers
 
-@flow   # NEW ****
-def pipeline(msg: str):
-    api_result = call_unreliable_api()
-    augmented_data = augment_data(data=api_result, msg=msg)
-    write_results_to_database(augmented_data)
+@task
+def make_param_strings():
 
-pipeline("Trying a flow!")
+    competitors = [
+        'apacheairflow', 
+        'astronomerio']
+        # '3098fsdc89f8uj'
+        # ]
+
+    competors_url_string = ','.join(competitors)
+
+    username_param = f'by?usernames={competors_url_string}' 
+    fields_param = '&user.fields=public_metrics'
+
+    return (username_param, fields_param)
+
+@task
+def make_api_call(headers, username_param, fields_param='&user.fields=public_metrics'):
+    base_url = 'https://api.twitter.com/2/users/'
+    response = requests.request(
+        "GET", 
+        base_url + username_param + fields_param, 
+        headers=headers
+        )
+
+    return response
+
+
+@flow
+def data_output():
+
+    headers = make_authentication_header()
+    print(headers.result())
+    param_strings = make_param_strings()
+    print(param_strings.result())
+    # print('HIIIIII -USER', username_param.result())
+    # print(fields_param.result())
+    # response = make_api_call(headers, username_param, fields_param)
+    # print(response.result().json())
+
+if __name__ == '__main__':
+    print('HIII')
+    data_output()
+
+
