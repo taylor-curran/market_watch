@@ -6,35 +6,37 @@ import requests
 import pandas as pd
 from prefect import flow, task
 
-@task
-def make_authentication_header():
+@task(name="make-auth-header")
+def make_authentication_header(BEARER_TOKEN):
     load_dotenv()
-
-    TWITTER_API_KEY=os.getenv('TWITTER_API_KEY')
-    TWITTER_API_KEY_SECRET=os.getenv('TWITTER_API_SECRET')
-    TWITTER_BEARER_TOKEN=os.getenv('TWITTER_BEARER_TOKEN')
+    TWITTER_BEARER_TOKEN=os.getenv(BEARER_TOKEN)
 
     headers = {"Authorization": f"Bearer {TWITTER_BEARER_TOKEN}"}
 
     return headers
 
-@task
-def make_param_strings():
+@task(name="make-user-param-string")
+def make_user_param_string(users):
 
-    competitors = [
-        'apacheairflow', 
-        'astronomerio']
-        # '3098fsdc89f8uj'
-        # ]
+    if type(users) != str:
+        users_url_string = ','.join(users)
+        username_param = f'by?usernames={users_url_string}' 
+        return username_param
+    else:
+        username_param = f'by?usernames={users}'
+        return username_param
 
-    competors_url_string = ','.join(competitors)
+@task(name="make-field-param-string")
+def make_fields_param_string(fields):
+    
+    if type(fields) != str:
+        fields_url_string = ','.join(fields)
+        fields_param = f'&user.fields={fields_url_string}'
+    else:
+        fields_param = f'&user.fields={fields}'
+        return fields_param
 
-    username_param = f'by?usernames={competors_url_string}' 
-    fields_param = '&user.fields=public_metrics'
-
-    return (username_param, fields_param)
-
-@task
+@task(name="call-api")
 def make_api_call(headers, username_param, fields_param='&user.fields=public_metrics'):
     base_url = 'https://api.twitter.com/2/users/'
     response = requests.request(
@@ -46,20 +48,28 @@ def make_api_call(headers, username_param, fields_param='&user.fields=public_met
     return response
 
 
-@flow
-def data_output():
+@flow(name="Get User Data from Twitter API",
+      version=os.getenv("GIT_COMMIT_SHA"))
+def data_output(BEARER_TOKEN, users, fields):
 
-    headers = make_authentication_header()
-    print(headers.result())
-    param_strings = make_param_strings()
-    print(param_strings.result())
-    # print('HIIIIII -USER', username_param.result())
-    # print(fields_param.result())
-    # response = make_api_call(headers, username_param, fields_param)
-    # print(response.result().json())
+    headers = make_authentication_header(BEARER_TOKEN)
+    user_string = make_user_param_string(users)
+    field_string = make_fields_param_string(fields)
+    response = make_api_call(headers, user_string, field_string)
+    return response.result().json()
 
 if __name__ == '__main__':
-    print('HIII')
-    data_output()
+
+    # Input data
+    users = [
+        'apacheairflow', 
+        'astronomerio'
+        ]
+    fields = 'public_metrics'
+
+    r = data_output(BEARER_TOKEN='TWITTER_BEARER_TOKEN', users=users, fields=fields)
+
+    print(r.result())
+    print('KJHS')
 
 
