@@ -48,28 +48,32 @@ def make_api_call(headers, username_param, fields_param='&user.fields=public_met
     return response
 
 
-@flow(name="Get User Data from Twitter API",
+@flow(name="RESULT Get User Data from Twitter API",
       version=os.getenv("GIT_COMMIT_SHA"))
 def data_output(BEARER_TOKEN, users, fields):
 
     headers = make_authentication_header(BEARER_TOKEN)
     user_string = make_user_param_string(users)
     field_string = make_fields_param_string(fields)
-    response = make_api_call(headers, user_string, field_string)
+    response = make_api_call(
+        headers.result(), 
+        user_string.result(), 
+        field_string.result()
+        )
     return response.result().json()
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
-#     # Input data
-#     users = [
-#         'apacheairflow', 
-#         'astronomerio'
-#         ]
-#     fields = 'public_metrics'
+    # Input data
+    users = [
+        'apacheairflow', 
+        'astronomerio'
+        ]
+    fields = 'public_metrics'
 
-#     r = data_output(BEARER_TOKEN='TWITTER_BEARER_TOKEN', users=users, fields=fields)
+    r = data_output(BEARER_TOKEN='TWITTER_BEARER_TOKEN', users=users, fields=fields)
 
-#     print(r.result())
-#     print('KJHS')
+    print(r.result())
+    print('KJHS')
 
 

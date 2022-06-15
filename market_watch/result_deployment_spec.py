@@ -2,9 +2,9 @@
 from prefect.deployments import DeploymentSpec, SubprocessFlowRunner
 
 DeploymentSpec(
-    name="my-first-deployment",
-    flow_location="./first_flow.py",
-    flow_name="Get User Data from Twitter API",
+    name="result-my-first-deployment",
+    flow_location="./result_first_flow.py",
+    flow_name="RESULT Get User Data from Twitter API",
     parameters={
         'BEARER_TOKEN': 'TWITTER_BEARER_TOKEN',
         'users':[
@@ -13,6 +13,6 @@ DeploymentSpec(
             ],
             'fields': 'public_metrics'
         },
-    tags=['Twitter_API'],
+    tags=['RESULT'],
     flow_runner=SubprocessFlowRunner()
 )
