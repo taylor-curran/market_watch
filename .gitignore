@@ -137,3 +137,4 @@ market_watch/comps_list.py
 
 *.csv
 
+.prefect/
